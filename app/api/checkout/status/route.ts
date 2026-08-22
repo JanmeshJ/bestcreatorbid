@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { withApiErrorHandling } from "@/lib/api-error";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function GET(req: Request) {
+export const GET = withApiErrorHandling(async (req: Request) => {
   const sessionId = new URL(req.url).searchParams.get("session_id");
   if (!sessionId) {
     return NextResponse.json({ error: "Missing session." }, { status: 400 });
@@ -22,4 +23,4 @@ export async function GET(req: Request) {
     amountCents: bid.amount_cents,
     creator: bid.creators,
   });
-}
+});

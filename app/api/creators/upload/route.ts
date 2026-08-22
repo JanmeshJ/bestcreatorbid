@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { withApiErrorHandling } from "@/lib/api-error";
 import { hashValue, hitRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_BYTES = 2 * 1024 * 1024;
 
-export async function POST(req: Request) {
+export const POST = withApiErrorHandling(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const limited = await hitRateLimit(`upload:${hashValue(ip)}`, 10, 60 * 60 * 1000);
   if (!limited.ok) {
@@ -37,4 +38,4 @@ export async function POST(req: Request) {
   }
   const { data } = admin.storage.from("avatars").getPublicUrl(path);
   return NextResponse.json({ url: data.publicUrl });
-}
+});

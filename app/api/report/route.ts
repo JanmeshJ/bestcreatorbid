@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { withApiErrorHandling } from "@/lib/api-error";
 import { hashValue, hitRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -12,7 +13,7 @@ const Body = z.object({
   message: z.string().max(1000).optional(),
 });
 
-export async function POST(req: Request) {
+export const POST = withApiErrorHandling(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const limited = await hitRateLimit(`report:${hashValue(ip)}`, 8, 60 * 60 * 1000);
   if (!limited.ok) {
@@ -35,4 +36,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Could not save the report." }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
-}
+});

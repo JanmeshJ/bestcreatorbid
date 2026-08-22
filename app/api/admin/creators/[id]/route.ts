@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { withApiErrorHandling } from "@/lib/api-error";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -12,10 +13,10 @@ const Body = z.object({
   status: z.enum(["active", "disabled", "removed"]).optional(),
 });
 
-export async function POST(
+export const POST = withApiErrorHandling(async (
   req: Request,
   context: { params: Promise<{ id: string }> }
-) {
+) => {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -50,4 +51,4 @@ export async function POST(
   });
 
   return NextResponse.json({ ok: true });
-}
+});

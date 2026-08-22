@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { withApiErrorHandling } from "@/lib/api-error";
 import { PAYMENT_NOTICE, MIN_BID_CENTS, MAX_BID_CENTS } from "@/lib/constants";
 import { amountToTakeFirst } from "@/lib/money";
 import { getPlatform, isPlatformId, resolveCreatorInput } from "@/lib/platforms";
@@ -30,7 +31,7 @@ function isSafeHttpUrl(value: string) {
   }
 }
 
-export async function POST(req: Request) {
+export const POST = withApiErrorHandling(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const limited = await hitRateLimit(`checkout:${hashValue(ip)}`, 12, 60 * 60 * 1000);
   if (!limited.ok) {
@@ -184,4 +185,4 @@ export async function POST(req: Request) {
     .eq("id", bid.id);
 
   return NextResponse.json({ url: session.url, bidId: bid.id });
-}
+});

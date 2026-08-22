@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { withApiErrorHandling } from "@/lib/api-error";
 import { hashValue } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function POST(req: Request) {
+export const POST = withApiErrorHandling(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const ua = req.headers.get("user-agent") || "unknown";
   const sessionId = hashValue(`${ip}:${ua}`).slice(0, 32);
@@ -12,4 +13,4 @@ export async function POST(req: Request) {
     last_seen: new Date().toISOString(),
   });
   return NextResponse.json({ ok: true });
-}
+});
