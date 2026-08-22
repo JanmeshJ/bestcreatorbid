@@ -171,6 +171,9 @@ export const POST = withApiErrorHandling(async (req: Request) => {
       custom_text: {
         submit: { message: PAYMENT_NOTICE },
       },
+      // Managed Payments (on by default for this account) is incompatible
+      // with custom_text; disabling it here keeps the payment notice intact.
+      managed_payments: { enabled: false },
     },
     {
       // Guards against this exact bid being charged twice if the Stripe call

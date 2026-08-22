@@ -82,5 +82,10 @@ export function avatarTone(seed: string) {
 }
 
 export function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  // A bare domain with no scheme (e.g. someone pastes "bestcreatorbid.lol"
+  // into the env var instead of "https://bestcreatorbid.lol") makes `new
+  // URL()` throw wherever this is used, which takes down every page since
+  // the root layout calls this for metadataBase. Normalize instead of crash.
+  return /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
 }
