@@ -14,6 +14,9 @@ export default async function HomePage() {
     getTopBidCents(),
   ]);
 
+  // rows is already the unfiltered, site-wide board here, so no extra query.
+  const boardTotals = rows.map((row) => ({ creatorId: row.creators.id, cents: row.total_bid_cents }));
+
   return (
     <AppShell activity={activity}>
       <SiteHeader
@@ -21,7 +24,7 @@ export default async function HomePage() {
         bidTodayCents={stats.bidTodayCents}
         clicksSent={stats.clicksSent}
       />
-      <BoardPage rows={rows} activity={activity} leaderCents={leaderCents} activePlatform="all" />
+      <BoardPage rows={rows} activity={activity} leaderCents={leaderCents} boardTotals={boardTotals} activePlatform="all" />
       <SiteFooter />
     </AppShell>
   );

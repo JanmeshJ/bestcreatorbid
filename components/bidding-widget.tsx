@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input, Textarea } from "@/components/ui/input";
 import { BID_PRESETS, MIN_BID_CENTS, TAKE_SPOT_INCREMENT_CENTS } from "@/lib/constants";
+import type { BoardTotal } from "@/lib/data";
 import { amountToTakeFirst, centsToDollars } from "@/lib/money";
 import { ENABLED_PLATFORMS, HANDLE_AFFIX, PLATFORMS, displayHandle, type PlatformId } from "@/lib/platforms";
 import { formatUsd } from "@/lib/utils";
@@ -26,6 +27,7 @@ type ProfileState = {
   avatarUrl: string;
   profileUrl: string;
   slug?: string;
+  creatorId?: string;
   existing?: boolean;
   rank?: number | null;
   totalBidCents?: number;
@@ -34,9 +36,11 @@ type ProfileState = {
 
 export function BiddingWidget({
   leaderCents,
+  boardTotals,
   defaultAmountDollars,
 }: {
   leaderCents: number;
+  boardTotals: BoardTotal[];
   defaultAmountDollars?: number;
 }) {
   const takeFirst = centsToDollars(amountToTakeFirst(leaderCents));
@@ -90,6 +94,7 @@ export function BiddingWidget({
         avatarUrl: p.avatarUrl || "",
         profileUrl: p.profileUrl,
         slug: json.slug || json.creator?.slug,
+        creatorId: json.creator?.id,
         existing: json.existing,
         rank: json.rank,
         totalBidCents: json.totalBidCents,
@@ -151,11 +156,19 @@ export function BiddingWidget({
     }
   }
 
-  const resultCopy = useMemo(() => {
+  const projectedRank = useMemo(() => {
     const nextTotal = (profile?.existing ? profile.totalBidCents ?? 0 : 0) + amount * 100;
-    if (nextTotal > leaderCents) return "You'll take #1";
-    return "You'll join the board";
-  }, [amount, leaderCents, profile]);
+    let rank = 1;
+    for (const row of boardTotals) {
+      if (profile?.existing && row.creatorId === profile.creatorId) continue;
+      // a tie stays above a new/incoming bid — matches the ranking rule
+      // used site-wide (equal totals keep whoever was already there on top).
+      if (row.cents >= nextTotal) rank += 1;
+    }
+    return rank;
+  }, [amount, profile, boardTotals]);
+
+  const resultCopy = projectedRank === 1 ? "You'll take #1" : `You'll land at #${projectedRank}`;
 
   const claimRank = intent?.rank || 1;
   const affix = HANDLE_AFFIX[platform];
@@ -418,7 +431,11 @@ export function BiddingWidget({
           )}
           {checkoutError && <p className="mt-3 text-sm text-red-600">{checkoutError}</p>}
           <Button className="mt-5 w-full" size="lg" disabled={loading} onClick={() => void startCheckout()}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : `Pay $${amount} & ${resultCopy.toLowerCase().includes("take") ? "take #1" : "join"}`}
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              `Pay $${amount} & ${projectedRank === 1 ? "take #1" : `land at #${projectedRank}`}`
+            )}
           </Button>
           <PaymentNotice className="mt-3" />
         </DialogContent>

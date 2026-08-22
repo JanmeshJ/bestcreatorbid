@@ -175,6 +175,24 @@ export async function getTopBidCents() {
   return data?.total_bid_cents ?? 0;
 }
 
+export type BoardTotal = { creatorId: string; cents: number };
+
+/**
+ * Site-wide totals only (creator id + cents, no join), for projecting what
+ * rank a bid would land at. Ranking is always global, but a platform-
+ * filtered page's `rows` only has that platform's creators — this is the
+ * unfiltered set the bidding widget needs regardless of which page it's on.
+ */
+export async function getAllBidTotals(): Promise<BoardTotal[]> {
+  if (!adminConfigured()) return [];
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("leaderboard_entries")
+    .select("creator_id, total_bid_cents")
+    .not("current_rank", "is", null);
+  return (data ?? []).map((row) => ({ creatorId: row.creator_id as string, cents: row.total_bid_cents as number }));
+}
+
 export async function getAdminBundle() {
   if (!adminConfigured()) {
     return { creators: [], bids: [], reports: [], removals: [], stats: await getSiteStats() };

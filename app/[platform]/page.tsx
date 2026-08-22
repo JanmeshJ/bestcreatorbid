@@ -3,7 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { BoardPage } from "@/components/board-page";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getActivity, getLeaderboard, getSiteStats, getTopBidCents } from "@/lib/data";
+import { getActivity, getAllBidTotals, getLeaderboard, getSiteStats, getTopBidCents } from "@/lib/data";
 import { getPlatform, isPlatformId } from "@/lib/platforms";
 
 export const dynamic = "force-dynamic";
@@ -28,11 +28,14 @@ export default async function PlatformBoardPage({
   const { platform: raw } = await params;
   if (!isPlatformId(raw) || !getPlatform(raw)) notFound();
   const platform = getPlatform(raw)!;
-  const [stats, rows, activity, leaderCents] = await Promise.all([
+  const [stats, rows, activity, leaderCents, boardTotals] = await Promise.all([
     getSiteStats(),
     getLeaderboard(platform.id),
     getActivity(),
     getTopBidCents(),
+    // rows above is platform-filtered, but ranking (and the bidding widget's
+    // rank projection) is always site-wide, so this needs the full set.
+    getAllBidTotals(),
   ]);
 
   return (
@@ -46,6 +49,7 @@ export default async function PlatformBoardPage({
         rows={rows}
         activity={activity}
         leaderCents={leaderCents}
+        boardTotals={boardTotals}
         activePlatform={platform.id}
         platformLabel={platform.name}
       />

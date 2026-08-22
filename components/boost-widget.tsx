@@ -1,6 +1,7 @@
 "use client";
 
 import { BID_PRESETS, MIN_BID_CENTS } from "@/lib/constants";
+import type { BoardTotal } from "@/lib/data";
 import { amountToOutrank, centsToDollars } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -8,25 +9,40 @@ import { Input } from "@/components/ui/input";
 import { PaymentNotice } from "@/components/payment-notice";
 import { formatUsd } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Creator } from "@/lib/supabase/types";
 
 export function BoostWidget({
   creator,
   currentTotal,
   leaderCents,
-  nextHeadline,
+  boardTotals,
 }: {
   creator: Creator;
   currentTotal: number;
   leaderCents: number;
-  nextHeadline: string;
+  boardTotals: BoardTotal[];
 }) {
   const toFirst = centsToDollars(amountToOutrank(leaderCents, currentTotal));
   const [amount, setAmount] = useState(Math.min(25, toFirst));
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reactive to the amount actually selected, not a fixed target computed
+  // once on the server — otherwise the headline can claim an outcome that
+  // doesn't match whatever the slider is currently set to.
+  const projectedRank = useMemo(() => {
+    const nextTotal = currentTotal + amount * 100;
+    let rank = 1;
+    for (const row of boardTotals) {
+      if (row.creatorId === creator.id) continue;
+      if (row.cents >= nextTotal) rank += 1;
+    }
+    return rank;
+  }, [amount, currentTotal, boardTotals, creator.id]);
+
+  const resultCopy = projectedRank === 1 ? "They'll take #1" : `They'll land at #${projectedRank}`;
 
   async function pay() {
     setLoading(true);
@@ -62,8 +78,8 @@ export function BoostWidget({
   return (
     <div className="panel p-6">
       <p className="text-sm font-semibold text-muted">Push them higher</p>
-      <p className="mt-2 text-2xl font-black">{nextHeadline}</p>
-      {leaderCents !== currentTotal && !nextHeadline.includes("take #1") && (
+      <p className="mt-2 text-2xl font-black">{resultCopy}</p>
+      {projectedRank !== 1 && (
         <p className="mt-1 text-sm text-accent-strong">
           <span className="font-mono tabular-nums">${toFirst}</span> to take #1
         </p>
@@ -101,6 +117,9 @@ export function BoostWidget({
           <DialogTitle>Back {creator.display_name}</DialogTitle>
           <DialogDescription>This payment increases their cumulative bid. Creators are not paid.</DialogDescription>
           <p className="mt-4 font-mono text-3xl font-black tabular-nums">{formatUsd(amount * 100)}</p>
+          <p className="mt-1 text-sm text-muted">
+            Result if successful: <span className="font-semibold text-foreground">{resultCopy}</span>
+          </p>
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           <Button className="mt-4 w-full" disabled={loading} onClick={() => void pay()}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : `Pay $${amount}`}

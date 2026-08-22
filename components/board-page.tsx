@@ -3,6 +3,7 @@ import { BoardPulse } from "@/components/board-pulse";
 import { Hero } from "@/components/hero";
 import { Leaderboard } from "@/components/leaderboard";
 import { PlatformFilters } from "@/components/platform-filters";
+import type { BoardTotal } from "@/lib/data";
 import type { PlatformId } from "@/lib/platforms";
 import type { ActivityEvent, LeaderboardRow } from "@/lib/supabase/types";
 
@@ -10,12 +11,14 @@ export function BoardPage({
   rows,
   activity,
   leaderCents,
+  boardTotals,
   activePlatform,
   platformLabel,
 }: {
   rows: (LeaderboardRow & { filter_rank: number })[];
   activity: ActivityEvent[];
   leaderCents: number;
+  boardTotals: BoardTotal[];
   activePlatform?: PlatformId | "all";
   platformLabel?: string;
 }) {
@@ -26,7 +29,7 @@ export function BoardPage({
           <Hero platformLabel={platformLabel} />
 
           <div className="panel mt-4 p-4 sm:p-6">
-            <BiddingWidget leaderCents={leaderCents} />
+            <BiddingWidget leaderCents={leaderCents} boardTotals={boardTotals} />
           </div>
 
           <div className="mt-3 hidden flex-wrap justify-center gap-2 sm:flex lg:justify-start">

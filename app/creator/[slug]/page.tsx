@@ -57,6 +57,10 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
   const total = entry?.total_bid_cents ?? 0;
   const above = rank && rank > 1 ? board.find((row) => row.current_rank === rank - 1) : null;
   const toNext = above ? centsToDollars(amountToOutrank(above.total_bid_cents, total)) : null;
+  // board is already the full, unfiltered leaderboard (getLeaderboard() with
+  // no platform arg), so no extra query needed for the boost widget's
+  // rank-projection math.
+  const boardTotals = board.map((row) => ({ creatorId: row.creators.id, cents: row.total_bid_cents }));
   const platform = PLATFORMS[creator.platform as keyof typeof PLATFORMS];
   const rankAge = entry?.current_rank_started_at
     ? Math.floor((Date.now() - new Date(entry.current_rank_started_at).getTime()) / 1000)
@@ -124,18 +128,7 @@ export default async function CreatorPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
         <div className="space-y-6">
-          <BoostWidget
-            creator={creator}
-            currentTotal={total}
-            leaderCents={leaderCents}
-            nextHeadline={
-              rank === 1
-                ? "They're already #1. For now."
-                : toNext != null
-                  ? `$${toNext} to take #${(rank || 2) - 1}`
-                  : `$${centsToDollars(amountToOutrank(leaderCents, total))} to take #1`
-            }
-          />
+          <BoostWidget creator={creator} currentTotal={total} leaderCents={leaderCents} boardTotals={boardTotals} />
           <section className="panel p-6">
             <h2 className="font-black">Recent bids</h2>
             <div className="mt-4 space-y-3">
