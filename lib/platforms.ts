@@ -67,10 +67,23 @@ function asHandle(input: string) {
   return input.trim().replace(/^@/, "").replace(/^\/+/, "").split(/[/?#]/)[0]?.toLowerCase() ?? "";
 }
 
+function looksLikeUrl(trimmed: string, domains: string[]) {
+  if (/^https?:\/\//i.test(trimmed)) return true;
+  // A "/" only ever shows up here as a path separator (a bare handle can't
+  // contain one), so it's a reliable url-vs-handle signal. A "." alone is
+  // not: plenty of real handles contain one (Instagram/TikTok/YouTube all
+  // allow periods, e.g. "khaby.lame"), and "handle.with.dots" parses as a
+  // syntactically valid bare hostname, so a naive "contains a dot -> URL"
+  // check misroutes a real handle into URL parsing and rejects it outright.
+  if (trimmed.includes("/")) return true;
+  const bare = trimmed.replace(/^www\./i, "").toLowerCase();
+  return domains.some((domain) => bare === domain || bare.startsWith(`${domain}/`));
+}
+
 function standardHandle(input: string, domains: string[], prefixes: string[] = []) {
   const trimmed = input.trim();
   if (!trimmed) return null;
-  if (/[\.\/]/.test(trimmed) || /^https?:/i.test(trimmed)) {
+  if (looksLikeUrl(trimmed, domains)) {
     return extractHandleFromUrl(trimmed, domains, prefixes);
   }
   const handle = asHandle(trimmed);
