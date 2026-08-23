@@ -8,7 +8,7 @@ export function Hero({ platformLabel }: { platformLabel?: string }) {
       <h1 className="mt-1.5 text-[26px] font-black leading-[1.08] tracking-tight sm:text-[40px]">
         Think you&apos;re the
         <br />
-        best{platformLabel ? ` ${platformLabel}` : " content"} creator?
+        best{platformLabel ? ` ${platformLabel}` : ""} creator?
         <span className="mt-0.5 block pb-3">
           {/* inline-block so the underline tracks the text width, not the column */}
           <span className="relative inline-block">
@@ -35,7 +35,7 @@ export function Hero({ platformLabel }: { platformLabel?: string }) {
       </h1>
 
       <p className="mx-auto mt-1 hidden max-w-sm text-[14.5px] leading-relaxed text-muted sm:block lg:mx-0">
-        Creators rank themselves by how much they&apos;re willing to bet on their own attention.
+        Creators and fans rank them by how much someone&apos;s willing to bet on their attention.
       </p>
 
       <p className="mt-1.5 text-[13px] font-bold sm:mt-2 sm:text-sm">No judges. No algorithm. Just ego.</p>
